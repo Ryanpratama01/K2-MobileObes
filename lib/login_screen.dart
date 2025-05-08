@@ -179,7 +179,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.3),
+                              color: const Color.from(alpha: 1, red: 0.18, green: 0.49, blue: 0.196).withOpacity(0.3),
                               blurRadius: 20,
                               spreadRadius: 1,
                             ),

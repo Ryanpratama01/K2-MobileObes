@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:obecity_projectsem4/beranda.dart';
 import 'login_screen.dart';
 import 'wigdets/custom_button.dart';
 import 'dart:math' as math;
@@ -307,7 +308,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           Navigator.push(
                             context,
                             PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+                              // pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+                              pageBuilder: (context, animation, secondaryAnimation) => BerandaPage(),
                               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                 const begin = Offset(0.0, 1.0);
                                 const end = Offset.zero;
