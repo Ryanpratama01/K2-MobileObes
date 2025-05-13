@@ -13,7 +13,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
   double height = 170;
   double bmi = 0;
   String bmiCategory = "";
-  
+
   List<Map<String, dynamic>> nutritionRecommendations = [];
   List<Map<String, dynamic>> exerciseRecommendations = [];
 
@@ -23,11 +23,11 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
     calculateBMI();
     _generateRecommendations();
   }
-  
+
   void calculateBMI() {
     double heightInMeters = height / 100;
     bmi = currentWeight / pow(heightInMeters, 2);
-    
+
     if (bmi < 18.5) {
       bmiCategory = "Berat Badan Kurang";
     } else if (bmi < 25) {
@@ -38,12 +38,12 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
       bmiCategory = "Obesitas";
     }
   }
-  
+
   void _generateRecommendations() {
     // Reset recommendations
     nutritionRecommendations = [];
     exerciseRecommendations = [];
-    
+
     if (currentTarget == "Menurunkan") {
       nutritionRecommendations = [
         {
@@ -54,28 +54,32 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
         },
         {
           "title": "Makanan Tinggi Serat",
-          "description": "Buah, sayuran, dan biji-bijian membuat kenyang lebih lama",
+          "description":
+              "Buah, sayuran, dan biji-bijian membuat kenyang lebih lama",
           "icon": Icons.spa,
           "color": Colors.green,
         },
         {
           "title": "Kurangi Gula & Karbohidrat",
-          "description": "Batasi makanan dengan gula tambahan dan karbohidrat olahan",
+          "description":
+              "Batasi makanan dengan gula tambahan dan karbohidrat olahan",
           "icon": Icons.no_food,
           "color": Colors.red,
         },
       ];
-      
+
       exerciseRecommendations = [
         {
           "title": "Kardio Intensitas Tinggi",
-          "description": "30-45 menit lari, bersepeda, atau berenang 3-5 kali seminggu",
+          "description":
+              "30-45 menit lari, bersepeda, atau berenang 3-5 kali seminggu",
           "icon": Icons.directions_run,
           "color": Colors.blue,
         },
         {
           "title": "Latihan Interval",
-          "description": "Bergantian antara aktivitas intensitas tinggi dan pemulihan",
+          "description":
+              "Bergantian antara aktivitas intensitas tinggi dan pemulihan",
           "icon": Icons.timer,
           "color": Colors.purple,
         },
@@ -90,7 +94,8 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
       nutritionRecommendations = [
         {
           "title": "Tingkatkan Kalori",
-          "description": "Tambahkan 300-500 kalori per hari dari makanan bergizi",
+          "description":
+              "Tambahkan 300-500 kalori per hari dari makanan bergizi",
           "icon": Icons.add_circle,
           "color": Colors.green,
         },
@@ -107,7 +112,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
           "color": Colors.indigo,
         },
       ];
-      
+
       exerciseRecommendations = [
         {
           "title": "Latihan Beban Progresif",
@@ -117,13 +122,15 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
         },
         {
           "title": "Istirahat Cukup",
-          "description": "Beri otot waktu pemulihan 48-72 jam setelah latihan intensif",
+          "description":
+              "Beri otot waktu pemulihan 48-72 jam setelah latihan intensif",
           "icon": Icons.hotel,
           "color": Colors.teal,
         },
         {
           "title": "Kardio Terbatas",
-          "description": "Batasi kardio hingga 20-30 menit untuk menjaga kalori",
+          "description":
+              "Batasi kardio hingga 20-30 menit untuk menjaga kalori",
           "icon": Icons.directions_walk,
           "color": Colors.cyan,
         },
@@ -132,52 +139,59 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
       nutritionRecommendations = [
         {
           "title": "Diet Seimbang",
-          "description": "Konsumsi karbohidrat, protein, dan lemak dalam jumlah seimbang",
+          "description":
+              "Konsumsi karbohidrat, protein, dan lemak dalam jumlah seimbang",
           "icon": Icons.balance,
           "color": Colors.teal,
         },
         {
           "title": "Makanan Utuh",
-          "description": "Prioritaskan bahan makanan segar dan hindari makanan olahan",
+          "description":
+              "Prioritaskan bahan makanan segar dan hindari makanan olahan",
           "icon": Icons.eco,
           "color": Colors.green,
         },
         {
           "title": "Hidrasi Optimal",
-          "description": "Minum 2-3 liter air per hari untuk fungsi tubuh optimal",
+          "description":
+              "Minum 2-3 liter air per hari untuk fungsi tubuh optimal",
           "icon": Icons.water_drop,
           "color": Colors.blue,
         },
       ];
-      
+
       exerciseRecommendations = [
         {
           "title": "Aktivitas Konsisten",
-          "description": "Lakukan minimal 150 menit aktivitas sedang per minggu",
+          "description":
+              "Lakukan minimal 150 menit aktivitas sedang per minggu",
           "icon": Icons.loop,
           "color": Colors.amber,
         },
         {
           "title": "Latihan Kombinasi",
-          "description": "Gabungkan kardio dan latihan kekuatan untuk kesehatan optimal",
+          "description":
+              "Gabungkan kardio dan latihan kekuatan untuk kesehatan optimal",
           "icon": Icons.sync_alt,
           "color": Colors.purple,
         },
         {
           "title": "Aktivitas Sehari-hari",
-          "description": "Tingkatkan gerakan dalam rutinitas harian seperti jalan kaki",
+          "description":
+              "Tingkatkan gerakan dalam rutinitas harian seperti jalan kaki",
           "icon": Icons.directions_walk,
           "color": Colors.deepOrange,
         },
       ];
     }
   }
-  
+
   void _updateTarget(String target) {
     setState(() {
       currentTarget = target;
       if (target == "Menurunkan") {
-        targetWeight = currentWeight - 5 > 0 ? currentWeight - 5 : currentWeight;
+        targetWeight =
+            currentWeight - 5 > 0 ? currentWeight - 5 : currentWeight;
       } else if (target == "Menaikkan") {
         targetWeight = currentWeight + 5;
       } else {
@@ -233,7 +247,8 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                           Text("Berat Saat Ini"),
                           Text(
                             "${currentWeight.toStringAsFixed(1)} kg",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
                           ),
                         ],
                       ),
@@ -244,7 +259,8 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
                           Text("Target Berat"),
                           Text(
                             "${targetWeight.toStringAsFixed(1)} kg",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
                           ),
                         ],
                       ),
@@ -282,7 +298,9 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
             ),
             SizedBox(height: 8),
             Column(
-              children: nutritionRecommendations.map((item) => _buildRecommendationCard(item)).toList(),
+              children: nutritionRecommendations
+                  .map((item) => _buildRecommendationCard(item))
+                  .toList(),
             ),
             SizedBox(height: 20),
             Text(
@@ -295,24 +313,16 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
             ),
             SizedBox(height: 8),
             Column(
-              children: exerciseRecommendations.map((item) => _buildRecommendationCard(item)).toList(),
+              children: exerciseRecommendations
+                  .map((item) => _buildRecommendationCard(item))
+                  .toList(),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.recommend), label: 'Rekomendasi'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Statistik'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.calculate), label: 'IMT'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Pengaturan'),
-        ],
-      ),
     );
   }
-  
+
   Widget _buildTargetButton(String title, Color color) {
     return Expanded(
       child: ElevatedButton(
@@ -326,7 +336,7 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
       ),
     );
   }
-  
+
   Widget _buildRecommendationCard(Map<String, dynamic> item) {
     return Card(
       margin: EdgeInsets.only(bottom: 8),
@@ -336,18 +346,19 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
           backgroundColor: item["color"].withOpacity(0.2),
           child: Icon(item["icon"], color: item["color"]),
         ),
-        title: Text(item["title"], style: TextStyle(fontWeight: FontWeight.bold)),
+        title:
+            Text(item["title"], style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(item["description"]),
       ),
     );
   }
-  
+
   Color _getInfoColor() {
     if (currentTarget == "Menurunkan") return Colors.blue;
     if (currentTarget == "Menaikkan") return Colors.orange;
     return Colors.green;
   }
-  
+
   String _getInfoText() {
     if (currentTarget == "Menurunkan") {
       return "Target penurunan 0.5-1 kg per minggu dengan defisit kalori 500-1000 per hari";
