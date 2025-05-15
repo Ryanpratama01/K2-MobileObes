@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:obecity_projectsem4/login_screen.dart';
 import 'splash_screen.dart';
 import 'page/kalkulator.dart';
 import 'page/statistik.dart';
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: BerandaPage(),
+      home: LoginPage(),
       getPages: [
         GetPage(
             name: '/kalkulator',

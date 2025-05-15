@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class PengaturanPage extends StatefulWidget {
   const PengaturanPage({super.key});
 
@@ -13,6 +15,7 @@ class _PengaturanPageState extends State<PengaturanPage>
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
+  String nama = '';
   int currentPageIndex = 4;
 
   // Konstanta warna untuk konsistensi dengan beranda page
@@ -24,8 +27,8 @@ class _PengaturanPageState extends State<PengaturanPage>
 
   @override
   void initState() {
+    getUserLogin();
     super.initState();
-
     // Initialize animations consistent with beranda page
     _animationController = AnimationController(
       vsync: this,
@@ -52,7 +55,17 @@ class _PengaturanPageState extends State<PengaturanPage>
   @override
   void dispose() {
     _animationController.dispose();
+
     super.dispose();
+  }
+
+  void getUserLogin() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    print(prefs.getString("nama"));
+    setState(() {
+      nama = prefs.getString("nama")!;
+      // userEmail = prefs.getString("email")!;
+    });
   }
 
   void _showResetConfirmationDialog() {
@@ -239,8 +252,8 @@ class _PengaturanPageState extends State<PengaturanPage>
                               Icon(Icons.person, size: 60, color: Colors.white),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Username',
+                        Text(
+                          nama,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

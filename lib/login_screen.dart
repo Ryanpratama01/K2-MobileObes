@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:obecity_projectsem4/beranda.dart';
 import 'dart:ui';
+import 'package:http/http.dart' as http;
+import 'package:obecity_projectsem4/utils/request-url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'wigdets/custom_button.dart'; // Tetap menggunakan 'wigdets' sesuai aslinya
 import 'dart:math' as math;
 
@@ -12,14 +17,15 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
 
-  final _formKey = GlobalKey<FormState>();
-  
+  // final _formKey = GlobalKey<FormState>();
+
   // Controller untuk form fields
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -27,27 +33,35 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   @override
   void initState() {
+    // redirectWhenTokenExist();
     super.initState();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
+
     _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
       ),
     );
-    
+
     _slideAnimation = Tween<double>(begin: 30, end: 0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOutCubic,
       ),
     );
-    
+
     _animationController.forward();
+  }
+
+  void redirectWhenTokenExist() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("token") != "") {
+      Get.offAll(BerandaPage());
+    }
   }
 
   @override
@@ -59,6 +73,20 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     super.dispose();
   }
 
+  void loginProcess(email, password) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var url = Uri.parse("$baseUrl/login");
+    var body = {'email': email, 'password': password};
+    var response = await http.post(url, body: body);
+    var resBody = jsonDecode(response.body); //parsing json
+    prefs.setString("token", resBody['access_token']);
+    prefs.setString("nama", resBody['user']['Nama']);
+    prefs.setString("email", resBody['user']['email']);
+    prefs.setString("role", resBody['user']['Role']);
+
+    // print(resBody);
+  }
+
   // Konstanta warna untuk konsistensi
   static const Color primaryColor = Color(0xFF2E7D32);
   static const Color secondaryColor = Color(0xFFAED581);
@@ -68,16 +96,32 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   // Metode untuk validasi form
   void _validateAndSubmit() async {
-    if (_formKey.currentState?.validate() ?? false) {
+    if (true) {
       // Implementasi login
-      Get.showSnackbar(GetSnackBar(
-        duration: Duration(seconds: 1),
-        title: "Proses..",
-        message: "Proses Login..",
-      ));
-      
-      // Di sini bisa ditambahkan kode untuk mengirim data ke API login
-      Get.to(BerandaPage());
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      var url = Uri.parse("$baseUrl/login");
+      var body = {
+        'email': _emailController.text,
+        'password': _passwordController.text
+      };
+      var response = await http.post(url, body: body);
+      var resBody = jsonDecode(response.body); //parsing json
+      prefs.setString("token", resBody['access_token']);
+      prefs.setString("nama", resBody['user']['Nama']);
+      prefs.setString("email", resBody['user']['email']);
+      prefs.setString("role", resBody['user']['Role']);
+
+      if (response.statusCode == 200) {
+        // Get.offAll(BerandaPage());
+      } else {
+        Get.showSnackbar(GetSnackBar(
+          duration: Duration(seconds: 1),
+          title: "Error",
+          message: response.body,
+        ));
+      }
+
+      // // Di sini bisa ditambahkan kode untuk mengirim data ke API login
     }
   }
 
@@ -150,7 +194,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               ),
             ),
           ),
-          
+
           // Main content
           SafeArea(
             child: SingleChildScrollView(
@@ -167,7 +211,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   );
                 },
                 child: Form(
-                  key: _formKey,
+                  // key: _formKey,
                   child: Column(
                     children: [
                       // Logo dengan circle background
@@ -179,7 +223,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.from(alpha: 1, red: 0.18, green: 0.49, blue: 0.196).withOpacity(0.3),
+                              color: const Color.from(
+                                      alpha: 1,
+                                      red: 0.18,
+                                      green: 0.49,
+                                      blue: 0.196)
+                                  .withOpacity(0.3),
                               blurRadius: 20,
                               spreadRadius: 1,
                             ),
@@ -194,9 +243,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Title dengan gradient
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
@@ -216,11 +265,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 8),
-                      
+
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(20),
@@ -235,9 +285,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 30),
-                      
+
                       // Login Card dengan efek blur
                       ClipRRect(
                         borderRadius: BorderRadius.circular(24),
@@ -279,7 +329,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                         color: primaryColor,
                                         shadows: [
                                           Shadow(
-                                            color: Colors.black.withOpacity(0.1),
+                                            color:
+                                                Colors.black.withOpacity(0.1),
                                             offset: const Offset(0, 1),
                                             blurRadius: 2,
                                           ),
@@ -288,25 +339,27 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                     ),
                                   ],
                                 ),
-                                
+
                                 const SizedBox(height: 25),
-                                
+
                                 // Username field dengan validasi
-                                _buildInputField(
-                                  label: "Username",
-                                  hint: "Masukkan username anda",
-                                  icon: Icons.person,
-                                  controller: _usernameController,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty || value.length < 3) {
-                                      return 'Username minimal 3 karakter';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                
-                                const SizedBox(height: 18),
-                                
+                                // _buildInputField(
+                                //   label: "Username",
+                                //   hint: "Masukkan username anda",
+                                //   icon: Icons.person,
+                                //   controller: _usernameController,
+                                //   validator: (value) {
+                                //     if (value == null ||
+                                //         value.isEmpty ||
+                                //         value.length < 3) {
+                                //       return 'Username minimal 3 karakter';
+                                //     }
+                                //     return null;
+                                //   },
+                                // ),
+
+                                // const SizedBox(height: 18),
+
                                 // Email field dengan validasi
                                 _buildInputField(
                                   label: "Email",
@@ -314,15 +367,17 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   icon: Icons.email,
                                   controller: _emailController,
                                   validator: (value) {
-                                    if (value == null || value.isEmpty || !value.contains('@')) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        !value.contains('@')) {
                                       return 'Masukkan email yang valid';
                                     }
                                     return null;
                                   },
                                 ),
-                                
+
                                 const SizedBox(height: 18),
-                                
+
                                 // Password field dengan validasi
                                 _buildInputField(
                                   label: "Password",
@@ -330,14 +385,17 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   icon: Icons.lock,
                                   controller: _passwordController,
                                   isPassword: true,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty || value.length < 8 || !RegExp(r'\d').hasMatch(value)) {
-                                      return 'Password harus 8 karakter dan mengandung angka';
-                                    }
-                                    return null;
-                                  },
+                                  // validator: (value) {
+                                  //   if (value == null ||
+                                  //       value.isEmpty ||
+                                  //       value.length < 8 ||
+                                  //       !RegExp(r'\d').hasMatch(value)) {
+                                  //     return 'Password harus 8 karakter dan mengandung angka';
+                                  //   }
+                                  //   return null;
+                                  // },
                                 ),
-                                
+
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton(
@@ -355,9 +413,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                     ),
                                   ),
                                 ),
-                                
+
                                 const SizedBox(height: 10),
-                                
+
                                 // Login button menggunakan CustomButton
                                 CustomButton(
                                   text: "Masuk",
@@ -366,9 +424,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   backgroundColor: primaryColor,
                                   height: 56,
                                 ),
-                                
+
                                 const SizedBox(height: 20),
-                                
+
                                 // Tambahan register option
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,

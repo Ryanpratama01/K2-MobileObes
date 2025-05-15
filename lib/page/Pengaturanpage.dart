@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PengaturanPage extends StatefulWidget {
   @override
@@ -7,23 +8,37 @@ class PengaturanPage extends StatefulWidget {
 
 class _PengaturanPageState extends State<PengaturanPage> {
   // User profile settings
-  String userName = "Pengguna";
+  String userName = "";
   String userGender = "Pria";
   double userHeight = 170;
   String birthDate = "01/01/1990";
   String userEmail = "pengguna@email.com";
-  
+
   // App settings
   bool enableNotifications = true;
   bool darkMode = false;
   String weightUnit = "kg";
   String heightUnit = "cm";
   String language = "Bahasa Indonesia";
-  
+
   // Health goals
   String targetWeight = "60";
   String weeklyGoal = "0.5 kg";
   String activityLevel = "Aktif Sedang";
+
+  @override
+  void initState() {
+    getUserLogin();
+    super.initState();
+  }
+
+  void getUserLogin() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userName = prefs.getString("nama")!;
+      userEmail = prefs.getString("email")!;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +66,14 @@ class _PengaturanPageState extends State<PengaturanPage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 4,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.recommend), label: 'Rekomendasi'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Statistik'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.recommend), label: 'Rekomendasi'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart), label: 'Statistik'),
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
           BottomNavigationBarItem(icon: Icon(Icons.calculate), label: 'IMT'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Pengaturan'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Pengaturan'),
         ],
       ),
     );
@@ -220,7 +238,13 @@ class _PengaturanPageState extends State<PengaturanPage> {
           _buildDropdownSetting(
             "Tingkat Aktivitas",
             activityLevel,
-            ["Jarang Aktif", "Aktif Ringan", "Aktif Sedang", "Sangat Aktif", "Ekstra Aktif"],
+            [
+              "Jarang Aktif",
+              "Aktif Ringan",
+              "Aktif Sedang",
+              "Sangat Aktif",
+              "Ekstra Aktif"
+            ],
             (value) {
               setState(() {
                 activityLevel = value!;
@@ -313,7 +337,8 @@ class _PengaturanPageState extends State<PengaturanPage> {
     );
   }
 
-  Widget _buildSwitchSetting(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitchSetting(
+      String title, String subtitle, bool value, Function(bool) onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -343,7 +368,8 @@ class _PengaturanPageState extends State<PengaturanPage> {
     );
   }
 
-  Widget _buildDropdownSetting(String title, String currentValue, List<String> options, Function(String?) onChanged) {
+  Widget _buildDropdownSetting(String title, String currentValue,
+      List<String> options, Function(String?) onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -402,7 +428,8 @@ class _PengaturanPageState extends State<PengaturanPage> {
     );
   }
 
-  Widget _buildActionButton(String title, String subtitle, IconData icon, Color color, Function() onTap) {
+  Widget _buildActionButton(String title, String subtitle, IconData icon,
+      Color color, Function() onTap) {
     return InkWell(
       onTap: onTap,
       child: Padding(
