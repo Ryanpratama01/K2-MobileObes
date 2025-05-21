@@ -1,41 +1,39 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:obecity_projectsem4/beranda.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'package:obecity_projectsem4/utils/request-url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'wigdets/custom_button.dart'; // Tetap menggunakan 'wigdets' sesuai aslinya
-import 'dart:math' as math;
-import 'register.dart';
-import 'forget_pw.dart';
+import 'package:obecity_projectsem4/beranda.dart';
+import 'package:obecity_projectsem4/wigdets/custom_button.dart'; // Tetap menggunakan 'wigdets' sesuai aslinya
+import 'package:intl/intl.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
+  DateTime? _selectedDate;
 
-  // final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
   // Controller untuk form fields
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
 
   @override
   void initState() {
-    // redirectWhenTokenExist();
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -59,34 +57,43 @@ class _LoginPageState extends State<LoginPage>
     _animationController.forward();
   }
 
-  void redirectWhenTokenExist() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("token") != "") {
-      Get.offAll(BerandaPage());
-    }
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _birthDateController.dispose();
     super.dispose();
   }
 
-  void loginProcess(email, password) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    var url = Uri.parse("$baseUrl/login");
-    var body = {'email': email, 'password': password};
-    var response = await http.post(url, body: body);
-    var resBody = jsonDecode(response.body); //parsing json
-    prefs.setString("token", resBody['access_token']);
-    prefs.setString("nama", resBody['user']['Nama']);
-    prefs.setString("email", resBody['user']['email']);
-    prefs.setString("role", resBody['user']['Role']);
-
-    // print(resBody);
+  // Tampilkan date picker untuk memilih tanggal lahir
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _birthDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+      });
+    }
   }
 
   // Konstanta warna untuk konsistensi
@@ -96,34 +103,81 @@ class _LoginPageState extends State<LoginPage>
   static const Color backgroundColor2 = Color(0xFFCDEDC1);
   static const Color backgroundColor3 = Color(0xFFA5D6A7);
 
-  // Metode untuk validasi form
-  void _validateAndSubmit() async {
-    if (true) {
-      // Implementasi login
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      var url = Uri.parse("$baseUrl/login");
+  // Metode untuk validasi form dan registrasi
+  void _validateAndRegister() async {
+    if (_formKey.currentState!.validate()) {
+      // Implementasi registrasi
+      var url = Uri.parse("$baseUrl/register");
       var body = {
+        'nama': _usernameController.text,
         'email': _emailController.text,
-        'password': _passwordController.text
+        'password': _passwordController.text,
+        'tanggal_lahir': _selectedDate != null 
+            ? DateFormat('yyyy-MM-dd').format(_selectedDate!) 
+            : '',
+        'role': 'user', // Default role
       };
-      var response = await http.post(url, body: body);
-      var resBody = jsonDecode(response.body); //parsing json
-      prefs.setString("token", resBody['access_token']);
-      prefs.setString("nama", resBody['user']['Nama']);
-      prefs.setString("email", resBody['user']['email']);
-      prefs.setString("role", resBody['user']['Role']);
-
-      if (response.statusCode == 200) {
-        // Get.offAll(BerandaPage());
-      } else {
+      
+      try {
+        var response = await http.post(url, body: body);
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Registrasi berhasil, lanjutkan dengan login otomatis
+          var loginUrl = Uri.parse("$baseUrl/login");
+          var loginBody = {
+            'email': _emailController.text,
+            'password': _passwordController.text
+          };
+          
+          var loginResponse = await http.post(loginUrl, body: loginBody);
+          
+          if (loginResponse.statusCode == 200) {
+            var resBody = jsonDecode(loginResponse.body);
+            
+            final SharedPreferences prefs = await SharedPreferences.getInstance();
+            prefs.setString("token", resBody['access_token']);
+            prefs.setString("nama", resBody['user']['Nama']);
+            prefs.setString("email", resBody['user']['email']);
+            prefs.setString("role", resBody['user']['Role']);
+            
+            Get.offAll(() => BerandaPage());
+          } else {
+            // Login gagal setelah registrasi berhasil
+            Get.showSnackbar(GetSnackBar(
+              duration: const Duration(seconds: 3),
+              title: "Registrasi Berhasil",
+              message: "Silahkan login dengan akun baru Anda",
+              backgroundColor: primaryColor,
+            ));
+            
+            // Navigasi ke halaman login
+            Get.back(); // Kembali ke halaman login
+          }
+        } else {
+          // Registrasi gagal
+          var errorMessage = "Registrasi gagal";
+          try {
+            var errorBody = jsonDecode(response.body);
+            errorMessage = errorBody['message'] ?? errorMessage;
+          } catch (e) {
+            // Gagal parse error message
+          }
+          
+          Get.showSnackbar(GetSnackBar(
+            duration: const Duration(seconds: 3),
+            title: "Error",
+            message: errorMessage,
+            backgroundColor: Colors.red,
+          ));
+        }
+      } catch (e) {
         Get.showSnackbar(GetSnackBar(
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 3),
           title: "Error",
-          message: response.body,
+          message: "Terjadi kesalahan koneksi",
+          backgroundColor: Colors.red,
         ));
       }
-
-      // // Di sini bisa ditambahkan kode untuk mengirim data ke API login
     }
   }
 
@@ -134,11 +188,16 @@ class _LoginPageState extends State<LoginPage>
     required IconData icon,
     required TextEditingController controller,
     bool isPassword = false,
+    bool isDate = false,
     String? Function(String?)? validator,
+    VoidCallback? onTap,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword ? _obscurePassword : false,
+      onTap: onTap,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: primaryColor),
@@ -170,7 +229,7 @@ class _LoginPageState extends State<LoginPage>
                   });
                 },
               )
-            : null,
+            : (isDate ? const Icon(Icons.calendar_today, color: primaryColor) : null),
       ),
       validator: validator,
     );
@@ -213,24 +272,19 @@ class _LoginPageState extends State<LoginPage>
                   );
                 },
                 child: Form(
-                  // key: _formKey,
+                  key: _formKey,
                   child: Column(
                     children: [
                       // Logo dengan circle background
                       Container(
-                        height: 130,
-                        width: 130,
+                        height: 120,
+                        width: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.from(
-                                      alpha: 1,
-                                      red: 0.18,
-                                      green: 0.49,
-                                      blue: 0.196)
-                                  .withOpacity(0.3),
+                              color: const Color.fromRGBO(46, 125, 50, 0.3),
                               blurRadius: 20,
                               spreadRadius: 1,
                             ),
@@ -278,7 +332,7 @@ class _LoginPageState extends State<LoginPage>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
-                          "Pantau berat badan & kesehatanmu sekarang!",
+                          "Buat akun dan pantau kesehatanmu!",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -290,7 +344,7 @@ class _LoginPageState extends State<LoginPage>
 
                       const SizedBox(height: 30),
 
-                      // Login Card dengan efek blur
+                      // Register Card dengan efek blur
                       ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: BackdropFilter(
@@ -318,13 +372,13 @@ class _LoginPageState extends State<LoginPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
-                                      Icons.login_rounded,
+                                      Icons.person_add_rounded,
                                       color: primaryColor,
                                       size: 28,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      "Login",
+                                      "Registrasi",
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -345,22 +399,41 @@ class _LoginPageState extends State<LoginPage>
                                 const SizedBox(height: 25),
 
                                 // Username field dengan validasi
-                                // _buildInputField(
-                                //   label: "Username",
-                                //   hint: "Masukkan username anda",
-                                //   icon: Icons.person,
-                                //   controller: _usernameController,
-                                //   validator: (value) {
-                                //     if (value == null ||
-                                //         value.isEmpty ||
-                                //         value.length < 3) {
-                                //       return 'Username minimal 3 karakter';
-                                //     }
-                                //     return null;
-                                //   },
-                                // ),
+                                _buildInputField(
+                                  label: "Nama Lengkap",
+                                  hint: "Masukkan nama lengkap anda",
+                                  icon: Icons.person,
+                                  controller: _usernameController,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value.length < 3) {
+                                      return 'Nama minimal 3 karakter';
+                                    }
+                                    return null;
+                                  },
+                                ),
 
-                                // const SizedBox(height: 18),
+                                const SizedBox(height: 18),
+
+                                // Tanggal Lahir field
+                                _buildInputField(
+                                  label: "Tanggal Lahir",
+                                  hint: "Pilih tanggal lahir anda",
+                                  icon: Icons.cake,
+                                  controller: _birthDateController,
+                                  isDate: true,
+                                  readOnly: true,
+                                  onTap: () => _selectDate(context),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Pilih tanggal lahir anda';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 18),
 
                                 // Email field dengan validasi
                                 _buildInputField(
@@ -387,85 +460,54 @@ class _LoginPageState extends State<LoginPage>
                                   icon: Icons.lock,
                                   controller: _passwordController,
                                   isPassword: true,
-                                  // validator: (value) {
-                                  //   if (value == null ||
-                                  //       value.isEmpty ||
-                                  //       value.length < 8 ||
-                                  //       !RegExp(r'\d').hasMatch(value)) {
-                                  //     return 'Password harus 8 karakter dan mengandung angka';
-                                  //   }
-                                  //   return null;
-                                  // },
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value.length < 8) {
+                                      return 'Password minimal 8 karakter';
+                                    }
+                                    return null;
+                                  },
                                 ),
 
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ResetPasswordPage()),
-                                        );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: primaryColor,
-                                    ),
-                                    child: const Text(
-                                      "Lupa password?",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                const SizedBox(height: 25),
 
-                                const SizedBox(height: 10),
-
-                                // Login button menggunakan CustomButton
+                                // Register button menggunakan CustomButton
                                 CustomButton(
-                                  text: "Masuk",
-                                  icon: Icons.login_rounded,
-                                  onPressed: _validateAndSubmit,
+                                  text: "Daftar",
+                                  icon: Icons.app_registration_rounded,
+                                  onPressed: _validateAndRegister,
                                   backgroundColor: primaryColor,
                                   height: 56,
                                 ),
 
                                 const SizedBox(height: 20),
 
-                                // Tambahan register option
+                                // Opsi login
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      "Belum punya akun?",
+                                      "Sudah punya akun?",
                                       style: TextStyle(
                                         color: Colors.black87,
                                       ),
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const RegisterPage()),
-                                        );
+                                        // Navigasi kembali ke halaman login
+                                        Get.back();
                                       },
                                       style: TextButton.styleFrom(
                                         foregroundColor: primaryColor,
                                       ),
-                                        child: const Text.rich(
-                                              TextSpan(
-                                                text: "Daftar sekarang",
-                                                style: TextStyle(
-                                                  color: primaryColor,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                          ),
+                                      child: const Text(
+                                        "Login Sekarang",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
                                         ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

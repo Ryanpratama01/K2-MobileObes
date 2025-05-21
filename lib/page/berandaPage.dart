@@ -80,325 +80,333 @@ class _BerandaUIState extends State<BerandaUI>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            backgroundColor1,
-            backgroundColor2,
-            backgroundColor3,
-          ],
+    return Scaffold(
+      appBar: AppBar(title: Text("Input Berat Badan")),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              backgroundColor1,
+              backgroundColor2,
+              backgroundColor3,
+            ],
+          ),
         ),
-      ),
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: Opacity(
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Opacity(
               opacity: _fadeInAnimation.value,
-              child: child,
-            ),
-          );
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Weight Input Card
-              _buildGlassCard(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.scale,
-                          color: primaryColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Input Berat Badan Saat Ini',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.1),
-                                offset: const Offset(0, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text('${currentWeight.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor)),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: currentWeight,
-                      min: 30,
-                      max: 150,
-                      divisions: 240,
-                      label: currentWeight.toStringAsFixed(1),
-                      activeColor: primaryColor,
-                      inactiveColor: secondaryColor.withOpacity(0.5),
-                      onChanged: (value) =>
-                          setState(() => currentWeight = value),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomButton(
-                      text: "Simpan",
-                      icon: Icons.save,
-                      onPressed: calculateBMI,
-                      backgroundColor: primaryColor,
-                      height: 50,
-                    ),
-                  ],
-                ),
+              child: Transform.translate(
+                offset: Offset(0, _slideAnimation.value * 100),
+                child: child,
               ),
-
-              const SizedBox(height: 20),
-
-              // Chart Card
-              _buildGlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.show_chart,
-                          color: primaryColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Grafik Perkembangan",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+            );
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Weight Input Card
+                _buildGlassCard(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.scale,
                             color: primaryColor,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.1),
-                                offset: const Offset(0, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
+                            size: 24,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: FlGridData(
-                            show: true,
-                            getDrawingHorizontalLine: (value) {
-                              return FlLine(
-                                color: Colors.grey.withOpacity(0.3),
-                                strokeWidth: 1,
-                              );
-                            },
-                            getDrawingVerticalLine: (value) {
-                              return FlLine(
-                                color: Colors.grey.withOpacity(0.3),
-                                strokeWidth: 1,
-                              );
-                            },
-                          ),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 22,
-                                getTitlesWidget: (value, meta) {
-                                  return Text('');
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 28,
-                                getTitlesWidget: (value, meta) {
-                                  return Text(
-                                    value.toInt().toString(),
-                                    style: const TextStyle(
-                                      color: Color(0xFF2E7D32),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            topTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Input Berat Badan Saat Ini',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(
-                              color: Colors.grey.withOpacity(0.5),
-                              width: 1,
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text('${currentWeight.toStringAsFixed(1)} kg',
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor)),
+                      const SizedBox(height: 8),
+                      Slider(
+                        value: currentWeight,
+                        min: 30,
+                        max: 150,
+                        divisions: 240,
+                        label: currentWeight.toStringAsFixed(1),
+                        activeColor: primaryColor,
+                        inactiveColor: secondaryColor.withOpacity(0.5),
+                        onChanged: (value) =>
+                            setState(() => currentWeight = value),
+                      ),
+                      const SizedBox(height: 16),
+                      CustomButton(
+                        text: "Simpan",
+                        icon: Icons.save,
+                        onPressed: calculateBMI,
+                        backgroundColor: primaryColor,
+                        height: 50,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Chart Card
+                _buildGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.show_chart,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            "Grafik Perkembangan",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
-                          minX: 0,
-                          maxX: weightHistory.length.toDouble() - 1,
-                          minY: (weightHistory.reduce(min) - 5).clamp(30, 150),
-                          maxY: (weightHistory.reduce(max) + 5).clamp(30, 150),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: weightHistory
-                                  .asMap()
-                                  .entries
-                                  .map((e) => FlSpot(e.key.toDouble(), e.value))
-                                  .toList(),
-                              isCurved: true,
-                              color: Theme.of(context)
-                                  .primaryColor, // Mengambil warna dari tema
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: FlDotData(
-                                show: true,
-                                getDotPainter: (spot, percent, barData, index) {
-                                  return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: Theme.of(context).primaryColor,
-                                    strokeWidth: 2,
-                                    strokeColor: Colors.white,
-                                  );
-                                },
-                              ),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.3),
-                                    Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.0),
-                                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 200,
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(
+                              show: true,
+                              getDrawingHorizontalLine: (value) {
+                                return FlLine(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  strokeWidth: 1,
+                                );
+                              },
+                              getDrawingVerticalLine: (value) {
+                                return FlLine(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  strokeWidth: 1,
+                                );
+                              },
+                            ),
+                            titlesData: FlTitlesData(
+                              show: true,
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 22,
+                                  getTitlesWidget: (value, meta) {
+                                    return Text('');
+                                  },
                                 ),
                               ),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Status Card
-              _buildGlassCard(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: primaryColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Status Kesehatan",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.1),
-                                offset: const Offset(0, 1),
-                                blurRadius: 2,
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 28,
+                                  getTitlesWidget: (value, meta) {
+                                    return Text(
+                                      value.toInt().toString(),
+                                      style: const TextStyle(
+                                        color: Color(0xFF2E7D32),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            minX: 0,
+                            maxX: weightHistory.length.toDouble() - 1,
+                            minY:
+                                (weightHistory.reduce(min) - 5).clamp(30, 150),
+                            maxY:
+                                (weightHistory.reduce(max) + 5).clamp(30, 150),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: weightHistory
+                                    .asMap()
+                                    .entries
+                                    .map((e) =>
+                                        FlSpot(e.key.toDouble(), e.value))
+                                    .toList(),
+                                isCurved: true,
+                                color: Theme.of(context)
+                                    .primaryColor, // Mengambil warna dari tema
+                                barWidth: 3,
+                                isStrokeCapRound: true,
+                                dotData: FlDotData(
+                                  show: true,
+                                  getDotPainter:
+                                      (spot, percent, barData, index) {
+                                    return FlDotCirclePainter(
+                                      radius: 4,
+                                      color: Theme.of(context).primaryColor,
+                                      strokeWidth: 2,
+                                      strokeColor: Colors.white,
+                                    );
+                                  },
+                                ),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.3),
+                                      Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.0),
+                                    ],
+                                  ),
+                                ),
+                              )
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStatusRow(
-                        icon: Icons.category,
-                        label: "BMI",
-                        value: bmiCategory,
-                        valueColor: _getBMICategoryColor(bmiCategory)),
-                    _buildStatusRow(
-                        icon: Icons.calendar_today,
-                        label: "Tanggal Input",
-                        value:
-                            inputDate.isEmpty ? "Belum ada input" : inputDate),
-                    _buildStatusRow(
-                        icon: Icons.scale,
-                        label: "Berat Badan Saat Ini",
-                        value: "${currentWeight.toStringAsFixed(1)} kg"),
-                    _buildStatusRow(
-                        icon: Icons.history,
-                        label: "Berat Badan Terakhir",
-                        value: weightHistory.isEmpty
-                            ? "Belum ada data"
-                            : "${weightHistory.last.toStringAsFixed(1)} kg"),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFFFB74D)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
-                      child: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Status Card
+                _buildGlassCard(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.lightbulb, color: Color(0xFFFF9800)),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              "Jangan lupa input berat badan secara rutin untuk melihat perkembangan kesehatanmu!",
-                              style: TextStyle(
-                                  fontSize: 14, color: Color(0xFF5D4037)),
+                          const Icon(
+                            Icons.info_outline,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            "Status Kesehatan",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    )
-                  ],
+                      const SizedBox(height: 16),
+                      _buildStatusRow(
+                          icon: Icons.category,
+                          label: "BMI",
+                          value: bmiCategory,
+                          valueColor: _getBMICategoryColor(bmiCategory)),
+                      _buildStatusRow(
+                          icon: Icons.calendar_today,
+                          label: "Tanggal Input",
+                          value: inputDate.isEmpty
+                              ? "Belum ada input"
+                              : inputDate),
+                      _buildStatusRow(
+                          icon: Icons.scale,
+                          label: "Berat Badan Saat Ini",
+                          value: "${currentWeight.toStringAsFixed(1)} kg"),
+                      _buildStatusRow(
+                          icon: Icons.history,
+                          label: "Berat Badan Terakhir",
+                          value: weightHistory.isEmpty
+                              ? "Belum ada data"
+                              : "${weightHistory.last.toStringAsFixed(1)} kg"),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFFB74D)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.lightbulb, color: Color(0xFFFF9800)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Jangan lupa input berat badan secara rutin untuk melihat perkembangan kesehatanmu!",
+                                style: TextStyle(
+                                    fontSize: 14, color: Color(0xFF5D4037)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -473,5 +481,11 @@ class _BerandaUIState extends State<BerandaUI>
       default:
         return Colors.grey;
     }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 }

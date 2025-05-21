@@ -1,41 +1,40 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:obecity_projectsem4/beranda.dart';
-import 'dart:ui';
 import 'package:http/http.dart' as http;
-import 'package:obecity_projectsem4/utils/request-url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'wigdets/custom_button.dart'; // Tetap menggunakan 'wigdets' sesuai aslinya
-import 'dart:math' as math;
-import 'register.dart';
-import 'forget_pw.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+import 'login_screen.dart'; 
+import 'wigdets/custom_button.dart'; 
+import 'utils/request-url.dart'; // Import API base URL
+
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
-  bool _obscurePassword = true;
+class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTickerProviderStateMixin {
+  final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
 
-  // final _formKey = GlobalKey<FormState>();
-
-  // Controller untuk form fields
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  // Konstanta warna untuk konsistensi dengan login page
+  static const Color primaryColor = Color(0xFF2E7D32);
+  static const Color secondaryColor = Color(0xFFAED581);
+  static const Color backgroundColor1 = Color(0xFFE8F5E9);
+  static const Color backgroundColor2 = Color(0xFFCDEDC1);
+  static const Color backgroundColor3 = Color(0xFFA5D6A7);
 
   @override
   void initState() {
-    // redirectWhenTokenExist();
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -59,86 +58,142 @@ class _LoginPageState extends State<LoginPage>
     _animationController.forward();
   }
 
-  void redirectWhenTokenExist() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("token") != "") {
-      Get.offAll(BerandaPage());
-    }
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
-    _usernameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  void loginProcess(email, password) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    var url = Uri.parse("$baseUrl/login");
-    var body = {'email': email, 'password': password};
-    var response = await http.post(url, body: body);
-    var resBody = jsonDecode(response.body); //parsing json
-    prefs.setString("token", resBody['access_token']);
-    prefs.setString("nama", resBody['user']['Nama']);
-    prefs.setString("email", resBody['user']['email']);
-    prefs.setString("role", resBody['user']['Role']);
+  Future<void> _sendResetLink() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
 
-    // print(resBody);
-  }
+      try {
+        // Implementasi API call untuk reset password
+        var url = Uri.parse("$baseUrl/reset-password-request");
+        var response = await http.post(
+          url,
+          body: {'email': _emailController.text},
+        );
 
-  // Konstanta warna untuk konsistensi
-  static const Color primaryColor = Color(0xFF2E7D32);
-  static const Color secondaryColor = Color(0xFFAED581);
-  static const Color backgroundColor1 = Color(0xFFE8F5E9);
-  static const Color backgroundColor2 = Color(0xFFCDEDC1);
-  static const Color backgroundColor3 = Color(0xFFA5D6A7);
+        setState(() {
+          _isLoading = false;
+        });
 
-  // Metode untuk validasi form
-  void _validateAndSubmit() async {
-    if (true) {
-      // Implementasi login
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      var url = Uri.parse("$baseUrl/login");
-      var body = {
-        'email': _emailController.text,
-        'password': _passwordController.text
-      };
-      var response = await http.post(url, body: body);
-      var resBody = jsonDecode(response.body); //parsing json
-      prefs.setString("token", resBody['access_token']);
-      prefs.setString("nama", resBody['user']['Nama']);
-      prefs.setString("email", resBody['user']['email']);
-      prefs.setString("role", resBody['user']['Role']);
-
-      if (response.statusCode == 200) {
-        // Get.offAll(BerandaPage());
-      } else {
-        Get.showSnackbar(GetSnackBar(
-          duration: Duration(seconds: 1),
-          title: "Error",
-          message: response.body,
-        ));
+        if (response.statusCode == 200) {
+          _showSuccessDialog();
+        } else {
+          var responseBody = jsonDecode(response.body);
+          Get.snackbar(
+            'Error',
+            responseBody['message'] ?? 'Gagal mengirim link reset password',
+            backgroundColor: Colors.red[100],
+            colorText: Colors.red[800],
+            snackPosition: SnackPosition.BOTTOM,
+            margin: const EdgeInsets.all(16),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        Get.snackbar(
+          'Error',
+          'Terjadi kesalahan. Silakan coba lagi nanti.',
+          backgroundColor: Colors.red[100],
+          colorText: Colors.red[800],
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
       }
-
-      // // Di sini bisa ditambahkan kode untuk mengirim data ke API login
     }
   }
 
-  // Metode untuk membuat input field dengan style yang konsisten
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              shape: BoxShape.rectangle,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  offset: const Offset(0, 10),
+                  blurRadius: 20,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Color(0xFFE8F5E9),
+                  child: Icon(
+                    Icons.check,
+                    size: 50,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Berhasil!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Link reset password telah dikirim ke ${_emailController.text}. Silakan periksa email Anda.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: CustomButton(
+                    text: 'Kembali ke Login',
+                    icon: Icons.login_rounded,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Get.offAll(() => const LoginPage());
+                    },
+                    backgroundColor: primaryColor,
+                    height: 50,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildInputField({
     required String label,
     required String hint,
     required IconData icon,
     required TextEditingController controller,
-    bool isPassword = false,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword ? _obscurePassword : false,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: primaryColor),
@@ -158,21 +213,13 @@ class _LoginPageState extends State<LoginPage>
         ),
         filled: true,
         fillColor: Colors.white,
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: primaryColor,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              )
-            : null,
       ),
-      validator: validator,
+      validator: validator ?? (value) {
+        if (value == null || value.isEmpty) {
+          return 'Field ini tidak boleh kosong';
+        }
+        return null;
+      },
     );
   }
 
@@ -213,9 +260,23 @@ class _LoginPageState extends State<LoginPage>
                   );
                 },
                 child: Form(
-                  // key: _formKey,
+                  key: _formKey,
                   child: Column(
                     children: [
+                      // Back button
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: primaryColor,
+                          ),
+                          onPressed: () => Get.back(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
                       // Logo dengan circle background
                       Container(
                         height: 130,
@@ -225,12 +286,7 @@ class _LoginPageState extends State<LoginPage>
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.from(
-                                      alpha: 1,
-                                      red: 0.18,
-                                      green: 0.49,
-                                      blue: 0.196)
-                                  .withOpacity(0.3),
+                              color: const Color.fromARGB(1, 46, 125, 50).withOpacity(0.3),
                               blurRadius: 20,
                               spreadRadius: 1,
                             ),
@@ -259,9 +315,9 @@ class _LoginPageState extends State<LoginPage>
                           end: Alignment.bottomRight,
                         ).createShader(bounds),
                         child: const Text(
-                          "ObesCheck",
+                          "Reset Password",
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -278,7 +334,7 @@ class _LoginPageState extends State<LoginPage>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
-                          "Pantau berat badan & kesehatanmu sekarang!",
+                          "Kami akan mengirimkan link reset password ke email Anda",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -290,7 +346,7 @@ class _LoginPageState extends State<LoginPage>
 
                       const SizedBox(height: 30),
 
-                      // Login Card dengan efek blur
+                      // Reset Password Card dengan efek blur
                       ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: BackdropFilter(
@@ -318,13 +374,13 @@ class _LoginPageState extends State<LoginPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
-                                      Icons.login_rounded,
+                                      Icons.lock_reset,
                                       color: primaryColor,
                                       size: 28,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      "Login",
+                                      "Lupa Password",
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -344,28 +400,10 @@ class _LoginPageState extends State<LoginPage>
 
                                 const SizedBox(height: 25),
 
-                                // Username field dengan validasi
-                                // _buildInputField(
-                                //   label: "Username",
-                                //   hint: "Masukkan username anda",
-                                //   icon: Icons.person,
-                                //   controller: _usernameController,
-                                //   validator: (value) {
-                                //     if (value == null ||
-                                //         value.isEmpty ||
-                                //         value.length < 3) {
-                                //       return 'Username minimal 3 karakter';
-                                //     }
-                                //     return null;
-                                //   },
-                                // ),
-
-                                // const SizedBox(height: 18),
-
                                 // Email field dengan validasi
                                 _buildInputField(
                                   label: "Email",
-                                  hint: "Masukkan email anda",
+                                  hint: "Masukkan email akun Anda",
                                   icon: Icons.email,
                                   controller: _emailController,
                                   validator: (value) {
@@ -378,94 +416,48 @@ class _LoginPageState extends State<LoginPage>
                                   },
                                 ),
 
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 30),
 
-                                // Password field dengan validasi
-                                _buildInputField(
-                                  label: "Password",
-                                  hint: "Masukkan password anda",
-                                  icon: Icons.lock,
-                                  controller: _passwordController,
-                                  isPassword: true,
-                                  // validator: (value) {
-                                  //   if (value == null ||
-                                  //       value.isEmpty ||
-                                  //       value.length < 8 ||
-                                  //       !RegExp(r'\d').hasMatch(value)) {
-                                  //     return 'Password harus 8 karakter dan mengandung angka';
-                                  //   }
-                                  //   return null;
-                                  // },
-                                ),
-
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ResetPasswordPage()),
-                                        );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: primaryColor,
-                                    ),
-                                    child: const Text(
-                                      "Lupa password?",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
+                                // Reset Password button menggunakan CustomButton
+                                _isLoading
+                                    ? const CircularProgressIndicator(color: primaryColor)
+                                    : CustomButton(
+                                        text: "Kirim Link Reset",
+                                        icon: Icons.send,
+                                        onPressed: _sendResetLink,
+                                        backgroundColor: primaryColor,
+                                        height: 56,
                                       ),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 10),
-
-                                // Login button menggunakan CustomButton
-                                CustomButton(
-                                  text: "Masuk",
-                                  icon: Icons.login_rounded,
-                                  onPressed: _validateAndSubmit,
-                                  backgroundColor: primaryColor,
-                                  height: 56,
-                                ),
 
                                 const SizedBox(height: 20),
 
-                                // Tambahan register option
+                                // Login option
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      "Belum punya akun?",
+                                      "Sudah ingat password?",
                                       style: TextStyle(
                                         color: Colors.black87,
                                       ),
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const RegisterPage()),
-                                        );
+                                        Get.offAll(() => const LoginPage());
                                       },
                                       style: TextButton.styleFrom(
                                         foregroundColor: primaryColor,
                                       ),
-                                        child: const Text.rich(
-                                              TextSpan(
-                                                text: "Daftar sekarang",
-                                                style: TextStyle(
-                                                  color: primaryColor,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
+                                      child: const Text.rich(
+                                        TextSpan(
+                                          text: "Login sekarang",
+                                          style: TextStyle(
+                                            color: primaryColor,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
