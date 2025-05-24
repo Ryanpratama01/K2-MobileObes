@@ -19,10 +19,12 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
   DateTime? _selectedDate;
+  String? _selectedGender;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -30,7 +32,15 @@ class _RegisterPageState extends State<RegisterPage>
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+
+  // List gender options
+  final List<String> _genderOptions = ['Laki-laki', 'Perempuan'];
 
   @override
   void initState() {
@@ -63,7 +73,11 @@ class _RegisterPageState extends State<RegisterPage>
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _birthDateController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -87,11 +101,24 @@ class _RegisterPageState extends State<RegisterPage>
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
         _birthDateController.text = DateFormat('dd-MM-yyyy').format(picked);
+
+        // Auto calculate age
+        final now = DateTime.now();
+        final age = now.year - picked.year;
+        final monthDiff = now.month - picked.month;
+        final dayDiff = now.day - picked.day;
+
+        int calculatedAge = age;
+        if (monthDiff < 0 || (monthDiff == 0 && dayDiff < 0)) {
+          calculatedAge = age - 1;
+        }
+
+        _ageController.text = calculatedAge.toString();
       });
     }
   }
@@ -112,15 +139,19 @@ class _RegisterPageState extends State<RegisterPage>
         'nama': _usernameController.text,
         'email': _emailController.text,
         'password': _passwordController.text,
-        'tanggal_lahir': _selectedDate != null 
-            ? DateFormat('yyyy-MM-dd').format(_selectedDate!) 
+        'tanggal_lahir': _selectedDate != null
+            ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
             : '',
+        'jenis_kelamin': _selectedGender ?? '',
+        'usia': _ageController.text,
+        'tinggi_badan': _heightController.text,
+        'berat_badan': _weightController.text,
         'role': 'user', // Default role
       };
-      
+
       try {
         var response = await http.post(url, body: body);
-        
+
         if (response.statusCode == 200 || response.statusCode == 201) {
           // Registrasi berhasil, lanjutkan dengan login otomatis
           var loginUrl = Uri.parse("$baseUrl/login");
@@ -128,18 +159,19 @@ class _RegisterPageState extends State<RegisterPage>
             'email': _emailController.text,
             'password': _passwordController.text
           };
-          
+
           var loginResponse = await http.post(loginUrl, body: loginBody);
-          
+
           if (loginResponse.statusCode == 200) {
             var resBody = jsonDecode(loginResponse.body);
-            
-            final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+            final SharedPreferences prefs =
+                await SharedPreferences.getInstance();
             prefs.setString("token", resBody['access_token']);
             prefs.setString("nama", resBody['user']['Nama']);
             prefs.setString("email", resBody['user']['email']);
             prefs.setString("role", resBody['user']['Role']);
-            
+
             Get.offAll(() => BerandaPage());
           } else {
             // Login gagal setelah registrasi berhasil
@@ -149,7 +181,7 @@ class _RegisterPageState extends State<RegisterPage>
               message: "Silahkan login dengan akun baru Anda",
               backgroundColor: primaryColor,
             ));
-            
+
             // Navigasi ke halaman login
             Get.back(); // Kembali ke halaman login
           }
@@ -162,7 +194,7 @@ class _RegisterPageState extends State<RegisterPage>
           } catch (e) {
             // Gagal parse error message
           }
-          
+
           Get.showSnackbar(GetSnackBar(
             duration: const Duration(seconds: 3),
             title: "Error",
@@ -189,15 +221,21 @@ class _RegisterPageState extends State<RegisterPage>
     required TextEditingController controller,
     bool isPassword = false,
     bool isDate = false,
+    bool isNumber = false,
     String? Function(String?)? validator,
     VoidCallback? onTap,
     bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword ? _obscurePassword : false,
+      obscureText: isPassword
+          ? (controller == _passwordController
+              ? _obscurePassword
+              : _obscureConfirmPassword)
+          : false,
       onTap: onTap,
       readOnly: readOnly,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: primaryColor),
@@ -220,17 +258,70 @@ class _RegisterPageState extends State<RegisterPage>
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  (controller == _passwordController
+                          ? _obscurePassword
+                          : _obscureConfirmPassword)
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                   color: primaryColor,
                 ),
                 onPressed: () {
                   setState(() {
-                    _obscurePassword = !_obscurePassword;
+                    if (controller == _passwordController) {
+                      _obscurePassword = !_obscurePassword;
+                    } else {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    }
                   });
                 },
               )
-            : (isDate ? const Icon(Icons.calendar_today, color: primaryColor) : null),
+            : (isDate
+                ? const Icon(Icons.calendar_today, color: primaryColor)
+                : null),
       ),
+      validator: validator,
+    );
+  }
+
+  // Metode untuk membuat dropdown field
+  Widget _buildDropdownField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required List<String> items,
+    required String? value,
+    required Function(String?) onChanged,
+    String? Function(String?)? validator,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: primaryColor),
+        hintText: hint,
+        prefixIcon: Icon(icon, color: primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: secondaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: secondaryColor),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: items.map((String item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item),
+        );
+      }).toList(),
+      onChanged: onChanged,
       validator: validator,
     );
   }
@@ -313,7 +404,7 @@ class _RegisterPageState extends State<RegisterPage>
                           end: Alignment.bottomRight,
                         ).createShader(bounds),
                         child: const Text(
-                          "ObesCheck",
+                          "ObesityCheck",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -332,7 +423,7 @@ class _RegisterPageState extends State<RegisterPage>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
-                          "Buat akun dan pantau kesehatanmu!",
+                          "Create Your Account",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -368,40 +459,12 @@ class _RegisterPageState extends State<RegisterPage>
                             padding: const EdgeInsets.all(24.0),
                             child: Column(
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.person_add_rounded,
-                                      color: primaryColor,
-                                      size: 28,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      "Registrasi",
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: primaryColor,
-                                        shadows: [
-                                          Shadow(
-                                            color:
-                                                Colors.black.withOpacity(0.1),
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 2,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
                                 const SizedBox(height: 25),
 
-                                // Username field dengan validasi
+                                // Full Name field
                                 _buildInputField(
-                                  label: "Nama Lengkap",
-                                  hint: "Masukkan nama lengkap anda",
+                                  label: "Full Name",
+                                  hint: "Enter your full name",
                                   icon: Icons.person,
                                   controller: _usernameController,
                                   validator: (value) {
@@ -416,18 +479,88 @@ class _RegisterPageState extends State<RegisterPage>
 
                                 const SizedBox(height: 18),
 
-                                // Tanggal Lahir field
-                                _buildInputField(
-                                  label: "Tanggal Lahir",
-                                  hint: "Pilih tanggal lahir anda",
-                                  icon: Icons.cake,
-                                  controller: _birthDateController,
-                                  isDate: true,
-                                  readOnly: true,
-                                  onTap: () => _selectDate(context),
+                                // Gender dropdown
+                                _buildDropdownField(
+                                  label: "Jenis Kelamin",
+                                  hint: "Pilih jenis kelamin",
+                                  icon: Icons.wc,
+                                  items: _genderOptions,
+                                  value: _selectedGender,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedGender = newValue;
+                                    });
+                                  },
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Pilih tanggal lahir anda';
+                                      return 'Pilih jenis kelamin';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                // Age field
+                                _buildInputField(
+                                  label: "Usia",
+                                  hint: "Enter your Age Here",
+                                  icon: Icons.calendar_month,
+                                  controller: _ageController,
+                                  isNumber: true,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Masukkan usia anda';
+                                    }
+                                    final age = int.tryParse(value);
+                                    if (age == null || age < 1 || age > 120) {
+                                      return 'Usia tidak valid';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                // Height field
+                                _buildInputField(
+                                  label: "Tinggi Badan",
+                                  hint: "Enter your Height Here",
+                                  icon: Icons.height,
+                                  controller: _heightController,
+                                  isNumber: true,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Masukkan tinggi badan anda';
+                                    }
+                                    final height = double.tryParse(value);
+                                    if (height == null ||
+                                        height < 50 ||
+                                        height > 250) {
+                                      return 'Tinggi badan tidak valid';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                // Weight field
+                                _buildInputField(
+                                  label: "Berat Badan",
+                                  hint: "Enter your Weight Here",
+                                  icon: Icons.monitor_weight,
+                                  controller: _weightController,
+                                  isNumber: true,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Masukkan berat badan anda';
+                                    }
+                                    final weight = double.tryParse(value);
+                                    if (weight == null ||
+                                        weight < 20 ||
+                                        weight > 300) {
+                                      return 'Berat badan tidak valid';
                                     }
                                     return null;
                                   },
@@ -437,8 +570,8 @@ class _RegisterPageState extends State<RegisterPage>
 
                                 // Email field dengan validasi
                                 _buildInputField(
-                                  label: "Email",
-                                  hint: "Masukkan email anda",
+                                  label: "Email Address",
+                                  hint: "Enter your email",
                                   icon: Icons.email,
                                   controller: _emailController,
                                   validator: (value) {
@@ -456,7 +589,7 @@ class _RegisterPageState extends State<RegisterPage>
                                 // Password field dengan validasi
                                 _buildInputField(
                                   label: "Password",
-                                  hint: "Masukkan password anda",
+                                  hint: "Enter your password",
                                   icon: Icons.lock,
                                   controller: _passwordController,
                                   isPassword: true,
@@ -470,11 +603,31 @@ class _RegisterPageState extends State<RegisterPage>
                                   },
                                 ),
 
+                                const SizedBox(height: 18),
+
+                                // Confirm Password field
+                                _buildInputField(
+                                  label: "Confirm Password",
+                                  hint: "Confirm your password",
+                                  icon: Icons.lock_outline,
+                                  controller: _confirmPasswordController,
+                                  isPassword: true,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Konfirmasi password anda';
+                                    }
+                                    if (value != _passwordController.text) {
+                                      return 'Password tidak sama';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
                                 const SizedBox(height: 25),
 
                                 // Register button menggunakan CustomButton
                                 CustomButton(
-                                  text: "Daftar",
+                                  text: "Register Account",
                                   icon: Icons.app_registration_rounded,
                                   onPressed: _validateAndRegister,
                                   backgroundColor: primaryColor,
@@ -488,7 +641,7 @@ class _RegisterPageState extends State<RegisterPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      "Sudah punya akun?",
+                                      "Already have an account?",
                                       style: TextStyle(
                                         color: Colors.black87,
                                       ),
@@ -502,7 +655,7 @@ class _RegisterPageState extends State<RegisterPage>
                                         foregroundColor: primaryColor,
                                       ),
                                       child: const Text(
-                                        "Login Sekarang",
+                                        "Login",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
