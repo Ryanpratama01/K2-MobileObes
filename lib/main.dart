@@ -26,15 +26,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: IMTPage(),
-      getPages: [
-        GetPage(
-            name: '/kalkulator',
-            page: () => const MainNavigation(initialIndex: 0)),
-        GetPage(
-            name: '/statistik',
-            page: () => const MainNavigation(initialIndex: 1)),
-      ],
+      home: LoginPage(),
     );
   }
 }

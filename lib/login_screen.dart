@@ -79,7 +79,8 @@ class _LoginPageState extends State<LoginPage>
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     var url = Uri.parse("$baseUrl/login");
     var body = {'email': email, 'password': password};
-    var response = await http.post(url, body: body);
+    var response = await http
+        .post(url, body: body, headers: {'Accept': 'application/json'});
     var resBody = jsonDecode(response.body); //parsing json
     prefs.setString("token", resBody['access_token']);
     prefs.setString("nama", resBody['user']['Nama']);
@@ -113,8 +114,9 @@ class _LoginPageState extends State<LoginPage>
       prefs.setString("email", resBody['user']['email']);
       prefs.setString("role", resBody['user']['Role']);
 
+      print(response.body);
       if (response.statusCode == 200) {
-        // Get.offAll(BerandaPage());
+        Get.offAll(BerandaPage());
       } else {
         Get.showSnackbar(GetSnackBar(
           duration: Duration(seconds: 1),
@@ -196,285 +198,278 @@ class _LoginPageState extends State<LoginPage>
               ),
             ),
           ),
-
-          // Main content
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _slideAnimation.value),
-                    child: Opacity(
-                      opacity: _fadeInAnimation.value,
-                      child: child,
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _slideAnimation.value),
+                  child: Opacity(
+                    opacity: _fadeInAnimation.value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Form(
+                // key: _formKey,
+                child: Column(
+                  children: [
+                    // Logo dengan circle background
+                    Container(
+                      height: 130,
+                      width: 130,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.from(
+                                    alpha: 1,
+                                    red: 0.18,
+                                    green: 0.49,
+                                    blue: 0.196)
+                                .withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(15),
+                      child: Hero(
+                        tag: 'logo',
+                        child: Image.asset(
+                          'assets/LogoObes.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
-                  );
-                },
-                child: Form(
-                  // key: _formKey,
-                  child: Column(
-                    children: [
-                      // Logo dengan circle background
-                      Container(
-                        height: 130,
-                        width: 130,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+
+                    const SizedBox(height: 16),
+
+                    // Title dengan gradient
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [
+                          Color(0xFF007C79),
+                          Color(0xFF004D40),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: const Text(
+                        "ObesCheck",
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color.from(
-                                      alpha: 1,
-                                      red: 0.18,
-                                      green: 0.49,
-                                      blue: 0.196)
-                                  .withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 1,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Pantau berat badan & kesehatanmu sekarang!",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Login Card dengan efek blur
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1.5,
                             ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(15),
-                        child: Hero(
-                          tag: 'logo',
-                          child: Image.asset(
-                            'assets/LogoObes.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Title dengan gradient
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [
-                            Color(0xFF007C79),
-                            Color(0xFF004D40),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: const Text(
-                          "ObesCheck",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "Pantau berat badan & kesehatanmu sekarang!",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // Login Card dengan efek blur
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.85),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1.5,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.login_rounded,
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.login_rounded,
+                                    color: primaryColor,
+                                    size: 28,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    "Login",
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
                                       color: primaryColor,
-                                      size: 28,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          offset: const Offset(0, 1),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      "Login",
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: primaryColor,
-                                        shadows: [
-                                          Shadow(
-                                            color:
-                                                Colors.black.withOpacity(0.1),
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 2,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
+                              ),
 
-                                const SizedBox(height: 25),
+                              const SizedBox(height: 25),
 
-                                // Username field dengan validasi
-                                // _buildInputField(
-                                //   label: "Username",
-                                //   hint: "Masukkan username anda",
-                                //   icon: Icons.person,
-                                //   controller: _usernameController,
-                                //   validator: (value) {
-                                //     if (value == null ||
-                                //         value.isEmpty ||
-                                //         value.length < 3) {
-                                //       return 'Username minimal 3 karakter';
-                                //     }
-                                //     return null;
-                                //   },
-                                // ),
+                              // Username field dengan validasi
+                              // _buildInputField(
+                              //   label: "Username",
+                              //   hint: "Masukkan username anda",
+                              //   icon: Icons.person,
+                              //   controller: _usernameController,
+                              //   validator: (value) {
+                              //     if (value == null ||
+                              //         value.isEmpty ||
+                              //         value.length < 3) {
+                              //       return 'Username minimal 3 karakter';
+                              //     }
+                              //     return null;
+                              //   },
+                              // ),
 
-                                // const SizedBox(height: 18),
+                              // const SizedBox(height: 18),
 
-                                // Email field dengan validasi
-                                _buildInputField(
-                                  label: "Email",
-                                  hint: "Masukkan email anda",
-                                  icon: Icons.email,
-                                  controller: _emailController,
-                                  validator: (value) {
-                                    if (value == null ||
-                                        value.isEmpty ||
-                                        !value.contains('@')) {
-                                      return 'Masukkan email yang valid';
-                                    }
-                                    return null;
+                              // Email field dengan validasi
+                              _buildInputField(
+                                label: "Email",
+                                hint: "Masukkan email anda",
+                                icon: Icons.email,
+                                controller: _emailController,
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.isEmpty ||
+                                      !value.contains('@')) {
+                                    return 'Masukkan email yang valid';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              // Password field dengan validasi
+                              _buildInputField(
+                                label: "Password",
+                                hint: "Masukkan password anda",
+                                icon: Icons.lock,
+                                controller: _passwordController,
+                                isPassword: true,
+                                // validator: (value) {
+                                //   if (value == null ||
+                                //       value.isEmpty ||
+                                //       value.length < 8 ||
+                                //       !RegExp(r'\d').hasMatch(value)) {
+                                //     return 'Password harus 8 karakter dan mengandung angka';
+                                //   }
+                                //   return null;
+                                // },
+                              ),
+
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ResetPasswordPage()),
+                                    );
                                   },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: primaryColor,
+                                  ),
+                                  child: const Text(
+                                    "Lupa password?",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
+                              ),
 
-                                const SizedBox(height: 18),
+                              const SizedBox(height: 10),
 
-                                // Password field dengan validasi
-                                _buildInputField(
-                                  label: "Password",
-                                  hint: "Masukkan password anda",
-                                  icon: Icons.lock,
-                                  controller: _passwordController,
-                                  isPassword: true,
-                                  // validator: (value) {
-                                  //   if (value == null ||
-                                  //       value.isEmpty ||
-                                  //       value.length < 8 ||
-                                  //       !RegExp(r'\d').hasMatch(value)) {
-                                  //     return 'Password harus 8 karakter dan mengandung angka';
-                                  //   }
-                                  //   return null;
-                                  // },
-                                ),
+                              // Login button menggunakan CustomButton
+                              CustomButton(
+                                text: "Masuk",
+                                icon: Icons.login_rounded,
+                                onPressed: _validateAndSubmit,
+                                backgroundColor: primaryColor,
+                                height: 56,
+                              ),
 
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
+                              const SizedBox(height: 20),
+
+                              // Tambahan register option
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    "Belum punya akun?",
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  TextButton(
                                     onPressed: () {
                                       Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ResetPasswordPage()),
-                                        );
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const RegisterPage()),
+                                      );
                                     },
                                     style: TextButton.styleFrom(
                                       foregroundColor: primaryColor,
                                     ),
-                                    child: const Text(
-                                      "Lupa password?",
+                                    child: const Text.rich(TextSpan(
+                                      text: "Daftar sekarang",
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w500,
+                                        color: primaryColor,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
+                                    )),
                                   ),
-                                ),
-
-                                const SizedBox(height: 10),
-
-                                // Login button menggunakan CustomButton
-                                CustomButton(
-                                  text: "Masuk",
-                                  icon: Icons.login_rounded,
-                                  onPressed: _validateAndSubmit,
-                                  backgroundColor: primaryColor,
-                                  height: 56,
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                // Tambahan register option
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      "Belum punya akun?",
-                                      style: TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const RegisterPage()),
-                                        );
-                                      },
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: primaryColor,
-                                      ),
-                                        child: const Text.rich(
-                                              TextSpan(
-                                                text: "Daftar sekarang",
-                                                style: TextStyle(
-                                                  color: primaryColor,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                          ),
-                                        ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
