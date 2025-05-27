@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
+import 'package:obecity_projectsem4/login_screen.dart';
 import 'package:obecity_projectsem4/utils/request-url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obecity_projectsem4/beranda.dart';
@@ -134,83 +135,90 @@ class _RegisterPageState extends State<RegisterPage>
   void _validateAndRegister() async {
     if (_formKey.currentState!.validate()) {
       // Implementasi registrasi
-      var url = Uri.parse("$baseUrl/register");
+      var url = Uri.parse('$baseUrl/auth/register');
+      //     'Nama'           => 'required|string|max:255',
+      //     'Jenis_Kelamin'  => 'required|in:Laki-laki,Perempuan',
+      //     'Usia'           => 'required|numeric',
+      //     'Tinggi_Badan'   => 'required|numeric',
+      //     'Berat_Badan'    => 'required|numeric',
+      //     'email'          => 'required|email|unique:users,email',
+      //     'password'       => 'required|confirmed|min:6',
+
       var body = {
-        'nama': _usernameController.text,
+        'Nama': _usernameController.text,
+        'Jenis_Kelamin': _selectedGender ?? '',
+        'Usia': _ageController.text,
+        'Tinggi_Badan': _heightController.text,
+        'Berat_Badan': _weightController.text,
         'email': _emailController.text,
         'password': _passwordController.text,
-        'tanggal_lahir': _selectedDate != null
-            ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
-            : '',
-        'jenis_kelamin': _selectedGender ?? '',
-        'usia': _ageController.text,
-        'tinggi_badan': _heightController.text,
-        'berat_badan': _weightController.text,
-        'role': 'user', // Default role
       };
 
-      try {
-        var response = await http.post(url, body: body);
+      var response = await http
+          .post(url, body: body, headers: {"Accept": "application/json"});
+      print(response.body);
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          // Registrasi berhasil, lanjutkan dengan login otomatis
-          var loginUrl = Uri.parse("$baseUrl/login");
-          var loginBody = {
-            'email': _emailController.text,
-            'password': _passwordController.text
-          };
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.offAll(() => LoginPage());
+        // Registrasi berhasil, lanjutkan dengan login otomatis
+        // var loginUrl = Uri.parse('$baseUrl/auth/register');
+        // var loginBody = {
+        //   'email': _emailController.text,
+        //   'password': _passwordController.text
+        // };
 
-          var loginResponse = await http.post(loginUrl, body: loginBody);
+        // var loginResponse = await http.post(loginUrl, body: loginBody);
 
-          if (loginResponse.statusCode == 200) {
-            var resBody = jsonDecode(loginResponse.body);
+        // if (loginResponse.statusCode == 200) {
+        //   var resBody = jsonDecode(loginResponse.body);
 
-            final SharedPreferences prefs =
-                await SharedPreferences.getInstance();
-            prefs.setString("token", resBody['access_token']);
-            prefs.setString("nama", resBody['user']['Nama']);
-            prefs.setString("email", resBody['user']['email']);
-            prefs.setString("role", resBody['user']['Role']);
+        //   final SharedPreferences prefs = await SharedPreferences.getInstance();
+        //   prefs.setString("token", resBody['access_token']);
+        //   prefs.setString("nama", resBody['user']['Nama']);
+        //   prefs.setString("email", resBody['user']['email']);
+        //   prefs.setString("role", resBody['user']['Role']);
 
-            Get.offAll(() => BerandaPage());
-          } else {
-            // Login gagal setelah registrasi berhasil
-            Get.showSnackbar(GetSnackBar(
-              duration: const Duration(seconds: 3),
-              title: "Registrasi Berhasil",
-              message: "Silahkan login dengan akun baru Anda",
-              backgroundColor: primaryColor,
-            ));
+        //   Get.offAll(() => BerandaPage());
+        // } else {
+        //   // Login gagal setelah registrasi berhasil
+        //   Get.showSnackbar(GetSnackBar(
+        //     duration: const Duration(seconds: 3),
+        //     title: "Registrasi Berhasil",
+        //     message: "Silahkan login dengan akun baru Anda",
+        //     backgroundColor: primaryColor,
+        //   ));
 
-            // Navigasi ke halaman login
-            Get.back(); // Kembali ke halaman login
-          }
-        } else {
-          // Registrasi gagal
-          var errorMessage = "Registrasi gagal";
-          try {
-            var errorBody = jsonDecode(response.body);
-            errorMessage = errorBody['message'] ?? errorMessage;
-          } catch (e) {
-            // Gagal parse error message
-          }
-
-          Get.showSnackbar(GetSnackBar(
-            duration: const Duration(seconds: 3),
-            title: "Error",
-            message: errorMessage,
-            backgroundColor: Colors.red,
-          ));
+        //   // Navigasi ke halaman login
+        //   Get.back(); // Kembali ke halaman login
+        // }
+      } else {
+        // Registrasi gagal
+        var errorMessage = "Registrasi gagal";
+        try {
+          var errorBody = jsonDecode(response.body);
+          errorMessage = errorBody['message'] ?? errorMessage;
+        } catch (e) {
+          // Gagal parse error message
         }
-      } catch (e) {
+
         Get.showSnackbar(GetSnackBar(
           duration: const Duration(seconds: 3),
           title: "Error",
-          message: "Terjadi kesalahan koneksi",
+          message: errorMessage,
           backgroundColor: Colors.red,
         ));
       }
     }
+    //   catch (e) {
+    //     print(e);
+    //     Get.showSnackbar(GetSnackBar(
+    //       duration: const Duration(seconds: 3),
+    //       title: "Error",
+    //       message: "Terjadi kesalahan koneksi",
+    //       backgroundColor: Colors.red,
+    //     ));
+    //   }
+    // }
   }
 
   // Metode untuk membuat input field dengan style yang konsisten
