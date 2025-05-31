@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:obecity_projectsem4/page/berandaPage.dart';
+import 'package:obecity_projectsem4/page/beranda_ui.dart';
 import 'package:obecity_projectsem4/page/setting.dart';
 import 'package:obecity_projectsem4/page/Rekomendasipage.dart';
 import 'dart:math';

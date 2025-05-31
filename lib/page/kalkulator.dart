@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:obecity_projectsem4/utils/request-url.dart';
 
 void main() {
   runApp(IMTPage());
@@ -35,6 +38,7 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
 
   final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
 
   String gender = 'Laki-laki';
   String alcoholUse = 'Tidak';
@@ -42,6 +46,8 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
   String physicalActivity = 'Tidak';
   String painComplaint = 'Tidak';
   String instantNoodles = 'Tidak';
+  String prediction = '';
+  bool isLoading = false;
 
   int currentPageIndex = 3; // IMT page is the 4th index
 
@@ -81,7 +87,97 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
     _animationController.dispose();
     heightController.dispose();
     weightController.dispose();
+    ageController.dispose();
     super.dispose();
+  }
+
+// API Function - VERSI DIPERBAIKI
+  Future<void> kirimKeAPI() async {
+    final height = double.tryParse(heightController.text);
+    final weight = double.tryParse(weightController.text);
+    final age = double.tryParse(ageController.text);
+
+    if (height == null || weight == null || age == null) {
+      setState(() {
+        prediction = 'Masukkan data yang valid untuk tinggi, berat, dan umur';
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      prediction = '';
+    });
+
+    // PILIH SALAH SATU URL:
+    // Untuk Android Emulator:
+    final url = Uri.parse("$baseUrl/predict");
+
+    // Untuk Device Fisik (uncomment jika pakai HP):
+    // final url = Uri.parse('http://192.168.19.211:8000/api/predict');
+
+    // Convert form data to numerical values
+    int genderValue = gender == 'Laki-laki' ? 1 : 0;
+    int alcoholValue = alcoholUse == 'Ya' ? 1 : 0;
+    int familyObesityValue = familyObesity == 'Ya' ? 1 : 0;
+    int physicalActivityValue = physicalActivity == 'Ya' ? 1 : 0;
+    int painComplaintValue = painComplaint == 'Ya' ? 1 : 0;
+    int instantNoodlesValue = instantNoodles == 'Ya' ? 1 : 0;
+
+    // FORMAT DATA UNTUK LARAVEL (object, bukan array)
+    final data = {
+      "gender": genderValue,
+      "age": age.toInt(),
+      "height": height.toInt(),
+      "weight": weight.toInt(),
+      "alcohol": alcoholValue,
+      "family_obesity": familyObesityValue,
+      "physical_activity": physicalActivityValue,
+      "pain_complaint": painComplaintValue,
+      "instant_noodles": instantNoodlesValue
+    };
+
+    try {
+      print('🚀 Mengirim request ke: $url');
+      print('📊 Data yang dikirim: $data');
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+            body: jsonEncode(data),
+          )
+          .timeout(Duration(seconds: 15));
+
+      print('📱 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        setState(() {
+          // Sesuaikan dengan response dari Laravel
+          prediction = result['prediction'] ??
+              result['category'] ??
+              'BMI: ${result['bmi']} - ${result['risk'] ?? 'Unknown'}';
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          prediction =
+              'Error dari server: ${response.statusCode}\nDetail: ${response.body}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        prediction = 'Gagal terhubung ke server: $e';
+        isLoading = false;
+      });
+      print('❌ Error detail: $e');
+    }
   }
 
   // Glass card widget
@@ -185,14 +281,15 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
                           ),
                         ),
                         const SizedBox(height: 16),
+                        _buildTextField('Umur (tahun)', ageController),
                         _buildTextField('Tinggi Badan (cm)', heightController),
+                        _buildTextField('Berat Badan (kg)', weightController),
                         _buildDropdown(
                           'Jenis Kelamin',
                           ['Laki-laki', 'Perempuan'],
                           gender,
                           (val) => setState(() => gender = val!),
                         ),
-                        _buildTextField('Berat Badan (kg)', weightController),
                         _buildDropdown(
                           'Sering Mengkonsumsi Alkohol?',
                           ['Ya', 'Tidak'],
@@ -225,7 +322,7 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: _calculateBMI,
+                          onPressed: isLoading ? null : kirimKeAPI,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -234,17 +331,100 @@ class _BMICalculatorPageState extends State<BMICalculatorPage>
                             ),
                             elevation: 3,
                           ),
-                          child: const Text(
-                            'Hitung BMI',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Hitung BMI',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
                   ),
+
+                  // Prediction Result Card
+                  if (prediction.isNotEmpty)
+                    _buildGlassCard(
+                      child: Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: prediction.contains('Error') ||
+                                  prediction.contains('Gagal')
+                              ? const Color(0xFFFFEBEE)
+                              : const Color(0xFFE3F2FD),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: prediction.contains('Error') ||
+                                    prediction.contains('Gagal')
+                                ? const Color(0xFFE57373)
+                                : const Color(0xFF2196F3),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  prediction.contains('Error') ||
+                                          prediction.contains('Gagal')
+                                      ? Icons.warning
+                                      : Icons.health_and_safety,
+                                  color: prediction.contains('Error') ||
+                                          prediction.contains('Gagal')
+                                      ? const Color(0xFFE57373)
+                                      : const Color(0xFF2196F3),
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Prediksi Risiko Obesitas',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: prediction.contains('Error') ||
+                                            prediction.contains('Gagal')
+                                        ? const Color(0xFFD32F2F)
+                                        : const Color(0xFF1976D2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                prediction,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: prediction.contains('Error') ||
+                                          prediction.contains('Gagal')
+                                      ? const Color(0xFFD32F2F)
+                                      : primaryColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                   // Informational Tip Card
                   _buildGlassCard(

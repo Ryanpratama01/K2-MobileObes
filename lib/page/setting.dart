@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:obecity_projectsem4/login_screen.dart';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -166,9 +168,13 @@ class _PengaturanPageState extends State<PengaturanPage>
                 ),
               ),
               child: const Text('Keluar'),
-              onPressed: () {
+              onPressed: () async {
+                final SharedPreferences prefs =
+                    await SharedPreferences.getInstance();
                 // Implement logout functionality here
-                Navigator.of(context).pop();
+                // Navigator.of(context).pop();
+                prefs.remove('token');
+                Get.offAll(() => LoginPage());
                 // Add navigation to login screen or app exit
               },
             ),

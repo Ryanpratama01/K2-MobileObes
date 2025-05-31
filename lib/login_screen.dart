@@ -22,11 +22,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
+  bool _isLoading = false; // Tambahan untuk loading state
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
-
-  // final _formKey = GlobalKey<FormState>();
 
   // Controller untuk form fields
   final TextEditingController _usernameController = TextEditingController();
@@ -35,7 +34,7 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   void initState() {
-    // redirectWhenTokenExist();
+    redirectWhenTokenExist();
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -61,8 +60,9 @@ class _LoginPageState extends State<LoginPage>
 
   void redirectWhenTokenExist() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("token") != "") {
-      Get.offAll(BerandaPage());
+    String? token = prefs.getString("token");
+    if (token != null && token.isNotEmpty) {
+      Get.offAll(() => BerandaPage());
     }
   }
 
@@ -75,18 +75,68 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
-  void loginProcess(email, password) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    var url = Uri.parse("$baseUrl/login");
-    var body = {'email': email, 'password': password};
-    var response = await http.post(url, body: body);
-    var resBody = jsonDecode(response.body); //parsing json
-    prefs.setString("token", resBody['access_token']);
-    prefs.setString("nama", resBody['user']['Nama']);
-    prefs.setString("email", resBody['user']['email']);
-    prefs.setString("role", resBody['user']['Role']);
+  // Metode login dengan JSON format
+  Future<void> loginProcess(String email, String password) async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    // print(resBody);
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      
+      // Gunakan format JSON seperti yang diminta
+      final response = await http.post(
+        Uri.parse("$baseUrl/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": email, "password": password}),
+      );
+
+      if (response.statusCode == 200) {
+        var resBody = jsonDecode(response.body);
+        
+        // Simpan data ke SharedPreferences
+        await prefs.setString("token", resBody['access_token'] ?? '');
+        await prefs.setString("nama", resBody['user']['Nama'] ?? '');
+        await prefs.setString("email", resBody['user']['email'] ?? '');
+        await prefs.setString("role", resBody['user']['Role'] ?? '');
+
+        // Tampilkan snackbar sukses
+        Get.showSnackbar(const GetSnackBar(
+          duration: Duration(seconds: 2),
+          title: "Success",
+          message: "Login berhasil!",
+          backgroundColor: Colors.green,
+        ));
+
+        // Redirect ke halaman beranda
+        Get.offAll(() => BerandaPage());
+
+      } else {
+        // Handle error response
+        var errorBody = jsonDecode(response.body);
+        String errorMessage = errorBody['message'] ?? 'Login gagal';
+        
+        Get.showSnackbar(GetSnackBar(
+          duration: const Duration(seconds: 3),
+          title: "Error",
+          message: errorMessage,
+          backgroundColor: Colors.red,
+        ));
+      }
+      
+    } catch (e) {
+      // Handle network atau parsing error
+      Get.showSnackbar(GetSnackBar(
+        duration: const Duration(seconds: 3),
+        title: "Error",
+        message: "Terjadi kesalahan: ${e.toString()}",
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   // Konstanta warna untuk konsistensi
@@ -96,35 +146,41 @@ class _LoginPageState extends State<LoginPage>
   static const Color backgroundColor2 = Color(0xFFCDEDC1);
   static const Color backgroundColor3 = Color(0xFFA5D6A7);
 
-  // Metode untuk validasi form
+  // Metode untuk validasi dan submit
   void _validateAndSubmit() async {
-    if (true) {
-      // Implementasi login
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      var url = Uri.parse("$baseUrl/login");
-      var body = {
-        'email': _emailController.text,
-        'password': _passwordController.text
-      };
-      var response = await http.post(url, body: body);
-      var resBody = jsonDecode(response.body); //parsing json
-      prefs.setString("token", resBody['access_token']);
-      prefs.setString("nama", resBody['user']['Nama']);
-      prefs.setString("email", resBody['user']['email']);
-      prefs.setString("role", resBody['user']['Role']);
-
-      if (response.statusCode == 200) {
-        // Get.offAll(BerandaPage());
-      } else {
-        Get.showSnackbar(GetSnackBar(
-          duration: Duration(seconds: 1),
-          title: "Error",
-          message: response.body,
-        ));
-      }
-
-      // // Di sini bisa ditambahkan kode untuk mengirim data ke API login
+    // Validasi input
+    if (_emailController.text.isEmpty) {
+      Get.showSnackbar(const GetSnackBar(
+        duration: Duration(seconds: 2),
+        title: "Error",
+        message: "Email tidak boleh kosong",
+        backgroundColor: Colors.red,
+      ));
+      return;
     }
+
+    if (_passwordController.text.isEmpty) {
+      Get.showSnackbar(const GetSnackBar(
+        duration: Duration(seconds: 2),
+        title: "Error",
+        message: "Password tidak boleh kosong",
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
+    if (!_emailController.text.contains('@')) {
+      Get.showSnackbar(const GetSnackBar(
+        duration: Duration(seconds: 2),
+        title: "Error",
+        message: "Format email tidak valid",
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
+    // Proses login
+    await loginProcess(_emailController.text.trim(), _passwordController.text);
   }
 
   // Metode untuk membuat input field dengan style yang konsisten
@@ -213,7 +269,6 @@ class _LoginPageState extends State<LoginPage>
                   );
                 },
                 child: Form(
-                  // key: _formKey,
                   child: Column(
                     children: [
                       // Logo dengan circle background
@@ -344,24 +399,6 @@ class _LoginPageState extends State<LoginPage>
 
                                 const SizedBox(height: 25),
 
-                                // Username field dengan validasi
-                                // _buildInputField(
-                                //   label: "Username",
-                                //   hint: "Masukkan username anda",
-                                //   icon: Icons.person,
-                                //   controller: _usernameController,
-                                //   validator: (value) {
-                                //     if (value == null ||
-                                //         value.isEmpty ||
-                                //         value.length < 3) {
-                                //       return 'Username minimal 3 karakter';
-                                //     }
-                                //     return null;
-                                //   },
-                                // ),
-
-                                // const SizedBox(height: 18),
-
                                 // Email field dengan validasi
                                 _buildInputField(
                                   label: "Email",
@@ -387,15 +424,6 @@ class _LoginPageState extends State<LoginPage>
                                   icon: Icons.lock,
                                   controller: _passwordController,
                                   isPassword: true,
-                                  // validator: (value) {
-                                  //   if (value == null ||
-                                  //       value.isEmpty ||
-                                  //       value.length < 8 ||
-                                  //       !RegExp(r'\d').hasMatch(value)) {
-                                  //     return 'Password harus 8 karakter dan mengandung angka';
-                                  //   }
-                                  //   return null;
-                                  // },
                                 ),
 
                                 Align(
@@ -403,11 +431,11 @@ class _LoginPageState extends State<LoginPage>
                                   child: TextButton(
                                     onPressed: () {
                                       Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ResetPasswordPage()),
-                                        );
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const ResetPasswordPage()),
+                                      );
                                     },
                                     style: TextButton.styleFrom(
                                       foregroundColor: primaryColor,
@@ -423,14 +451,18 @@ class _LoginPageState extends State<LoginPage>
 
                                 const SizedBox(height: 10),
 
-                                // Login button menggunakan CustomButton
-                                CustomButton(
-                                  text: "Masuk",
-                                  icon: Icons.login_rounded,
-                                  onPressed: _validateAndSubmit,
-                                  backgroundColor: primaryColor,
-                                  height: 56,
-                                ),
+                                // Login button dengan loading state
+                                _isLoading 
+                                  ? const CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                                    )
+                                  : CustomButton(
+                                      text: "Masuk",
+                                      icon: Icons.login_rounded,
+                                      onPressed: _validateAndSubmit,
+                                      backgroundColor: primaryColor,
+                                      height: 56,
+                                    ),
 
                                 const SizedBox(height: 20),
 
@@ -456,16 +488,16 @@ class _LoginPageState extends State<LoginPage>
                                       style: TextButton.styleFrom(
                                         foregroundColor: primaryColor,
                                       ),
-                                        child: const Text.rich(
-                                              TextSpan(
-                                                text: "Daftar sekarang",
-                                                style: TextStyle(
-                                                  color: primaryColor,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
+                                      child: const Text.rich(
+                                        TextSpan(
+                                          text: "Daftar sekarang",
+                                          style: TextStyle(
+                                            color: primaryColor,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ),
+                                        )
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
